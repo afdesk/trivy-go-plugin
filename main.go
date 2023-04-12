@@ -105,8 +105,7 @@ func closeFile(file *os.File) {
 func getFlagValue(flag string) string {
 	flagIndex := slices.Index(os.Args, flag)
 	if flagIndex != -1 && (len(os.Args)-1) > flagIndex { // the flag exists and it is not the last argument
-		flagValue := os.Args[flagIndex+1]
-		return flagValue
+		return os.Args[flagIndex+1]
 	}
 	return ""
 }
