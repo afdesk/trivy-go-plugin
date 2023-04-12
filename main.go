@@ -20,18 +20,20 @@ var (
 )
 
 func main() {
-	helpMessage()
+	if slices.Contains(os.Args, "-h") || slices.Contains(os.Args, "--help") {
+		helpMessage()
+	}
 	pluginOutput := getFlagValue("--plugin-output")
-	if pluginOutput == nil {
+	if pluginOutput == "" {
 		log.Fatal("flag --plugin-output is required")
 	}
 	var trivyOutputFileName string
-	if outputFlagValue := getFlagValue("--output"); outputFlagValue == nil {
+	if outputFlagValue := getFlagValue("--output"); outputFlagValue == "" {
 		tempFileName := filepath.Join(os.TempDir(), tempJsonFileName)
 		trivyOutputFileName = tempFileName
 		defer removeFile(trivyOutputFileName)
 	} else {
-		trivyOutputFileName = *outputFlagValue
+		trivyOutputFileName = outputFlagValue
 	}
 
 	if err := makeTrivyJsonReport(trivyOutputFileName); err != nil {
@@ -42,7 +44,7 @@ func main() {
 		log.Fatalf("failed to get report from json: %v", err)
 	}
 
-	if err := saveResult(*pluginOutput, []byte{}); err != nil {
+	if err := saveResult(pluginOutput, []byte{}); err != nil {
 		log.Fatalf("failed to save result: %v", err)
 	}
 }
@@ -64,10 +66,9 @@ func getReportFromJson(jsonFileName string) (*types.Report, error) {
 	for _, misc := range k8sParsedReport.Misconfigurations {
 		resultsArr = append(resultsArr, misc.Results...)
 	}
-	rep := types.Report{
+	return &types.Report{
 		Results: resultsArr,
-	}
-	return &rep, nil
+	}, nil
 }
 
 func readJson[T any](jsonFileName string) (*T, error) {
@@ -104,13 +105,13 @@ func closeFile(file *os.File) {
 	}
 }
 
-func getFlagValue(flag string) *string {
+func getFlagValue(flag string) string {
 	flagIndex := slices.Index(os.Args, flag)
 	if flagIndex != -1 && (len(os.Args)-1) > flagIndex { // the flag exists and it is not the last argument
 		flagValue := os.Args[flagIndex+1]
-		return &flagValue
+		return flagValue
 	}
-	return nil
+	return ""
 }
 
 func saveResult(filename string, result []byte) error {
@@ -139,8 +140,7 @@ func makeTrivyJsonReport(outputFileName string) error {
 }
 
 func helpMessage() {
-	if slices.Contains(os.Args, "-h") || slices.Contains(os.Args, "--help") {
-		_, err := fmt.Printf(`
+	_, err := fmt.Printf(`
 trivy-go-plugin v%s
 Usage: trivy trivy-go-plugin [-h,--help] command target filename
  A Trivy common plugin.
@@ -150,9 +150,8 @@ Examples:
   # example
   trivy trivy-go-plugin
 `, version)
-		if err != nil {
-			log.Fatalf("Failed to display help message %v", err)
-		}
-		os.Exit(0)
+	if err != nil {
+		log.Fatalf("Failed to display help message %v", err)
 	}
+	os.Exit(0)
 }
