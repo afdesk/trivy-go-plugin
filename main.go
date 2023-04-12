@@ -27,13 +27,10 @@ func main() {
 	if pluginOutput == "" {
 		log.Fatal("flag --plugin-output is required")
 	}
-	var trivyOutputFileName string
-	if outputFlagValue := getFlagValue("--output"); outputFlagValue == "" {
-		tempFileName := filepath.Join(os.TempDir(), tempJsonFileName)
-		trivyOutputFileName = tempFileName
+	trivyOutputFileName := getFlagValue("--output")
+	if trivyOutputFileName == "" {
+		trivyOutputFileName = filepath.Join(os.TempDir(), tempJsonFileName)
 		defer removeFile(trivyOutputFileName)
-	} else {
-		trivyOutputFileName = outputFlagValue
 	}
 
 	if err := makeTrivyJsonReport(trivyOutputFileName); err != nil {
